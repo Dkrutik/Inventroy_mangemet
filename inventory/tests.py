@@ -10,6 +10,7 @@ class ItemTests(APITestCase):
 
     def test_create_item(self):
         url = reverse('create_item')
-        data = {'name': 'Test Item', 'description': 'Test description'}
+        data = {'name': 'Test', 'description': 'Test description',"quantity":79,"price":44444}
         response = self.client.post(url, data, format='json')
+        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

@@ -7,13 +7,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .models import Item
 from .serializers import ItemSerializer
-# import redis
-
+import redis
+import time
 # Initialize Redis
-# r = redis.Redis(host='localhost', port=6379, db=0)
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 class ItemListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = ItemSerializer(data=request.data)
@@ -27,14 +27,16 @@ class ItemDetailView(APIView):
 
     def get(self, request, item_id):
         # Check cache first
-        # cached_item = r.get(f'item_{item_id}')
-        # if cached_item:
-        #     return Response(eval(cached_item), status=status.HTTP_200_OK)
-
+        start_time = time.time()
+        cached_item = r.get(f'item_{item_id}')
+        redis_get_time = time.time() - start_time
+        if cached_item:
+            print(f"Redis GET took: {redis_get_time:.6f} seconds")
+            return Response(eval(cached_item), status=status.HTTP_200_OK)
         try:
             item = Item.objects.get(pk=item_id)
             serializer = ItemSerializer(item)
-            # r.set(f'item_{item_id}', str(serializer.data))  # Cache the data
+            r.set(f'item_{item_id}', str(serializer.data))  # Cache the data
             return Response(serializer.data)
         except Item.DoesNotExist:
             return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
